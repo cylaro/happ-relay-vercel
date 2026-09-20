@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/vx42Kq9m/s/:token*", "destination": "/api/relay?token=:token*" },
+    { "source": "/vx42Kq9m/health", "destination": "/api/health" }
+  ]
+}
