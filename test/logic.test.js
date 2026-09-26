@@ -69,6 +69,10 @@ test('resolveTarget: rejects credentials inside the target URL', () => {
   assert.throws(() => resolveTarget(ENV, 'my-secret-1', 'https://user:pass@panel.example.com/sub/t'), /credentials/);
 });
 
+test('resolveTarget: happ links get a clear hint', () => {
+  assert.throws(() => resolveTarget(ENV, 'my-secret-1', 'happ://crypt5/xyz'), /decrypt it first/);
+});
+
 test('hostAllowed: empty allowlist permits everything; subdomains match their root', () => {
   const open = { ALLOWED_HOSTS: '' };
   assert.equal(hostAllowed(open, 'anything.tld'), true);

@@ -57,9 +57,10 @@ export function resolveTarget(env, secret, tokenPath) {
   const expected = String(env?.SECRET_PREFIX || '');
   if (!expected || secret !== expected) throw err('not found', 404);
 
-  let raw = String(tokenPath || '').replace(/^\/+/, '');
+  let raw = String(tokenPath || '').trim().replace(/^\/+/, '');
   // Apps and CDNs sometimes collapse "https://" into "https:/": restore it.
   raw = raw.replace(/^(https?):\/{1,}/i, '$1://');
+  if (/^happ:\/\//i.test(raw)) throw err('this is an encrypted happ link — decrypt it first with happ-decryptor');
   if (!/^https:\/\//i.test(raw)) {
     // Scheme-less host/path: assume https.
     if (/^[a-z0-9.-]+\.[a-z]{2,}([/?#]|$)/i.test(raw)) raw = 'https://' + raw;
