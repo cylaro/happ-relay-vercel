@@ -7,7 +7,7 @@ const ENV = {
   SECRET_PREFIX: 'my-secret-1',
   HWID: 'UE42LJXu4DbiCaBv',
   USER_AGENT: 'Happ/1.16.0 (iOS 18.3; iPhone 14 Pro)',
-  PANEL_BASE: 'https://panel.example.com/sub',
+  ALLOWED_HOSTS: '',
   DEVICE_OS: 'iOS',
   VER_OS: '18.3',
   DEVICE_MODEL: 'iPhone 14 Pro',
@@ -17,18 +17,16 @@ test('validateRelayEnv accepts a complete configuration', () => {
   assert.equal(validateRelayEnv(ENV).ok, true);
 });
 
-test('validateRelayEnv reports invalid or missing settings without leaking values', () => {
-  const result = validateRelayEnv({ SECRET_PREFIX: 'x', HWID: 'short', USER_AGENT: '', PANEL_BASE: 'http://insecure' });
-  assert.equal(result.ok, false);
-  assert.equal(result.missing.length, 4);
-  for (const entry of result.missing) assert.ok(!entry.includes('insecure'));
+test('validateRelayEnv works without optional variables', () => {
+  const { ALLOWED_HOSTS, DEVICE_OS, VER_OS, DEVICE_MODEL, ...requiredOnly } = ENV;
+  assert.equal(validateRelayEnv(requiredOnly).ok, true);
 });
 
-test('validateRelayEnv: PANEL_BASE is optional, ALLOWED_HOSTS entries are validated', () => {
-  const { PANEL_BASE, ...withoutBase } = ENV;
-  assert.equal(validateRelayEnv(withoutBase).ok, true);
-  assert.equal(validateRelayEnv({ ...ENV, ALLOWED_HOSTS: 'a.com,sub.b.com' }).ok, true);
-  assert.equal(validateRelayEnv({ ...ENV, ALLOWED_HOSTS: 'a.com, bad host' }).ok, false);
+test('validateRelayEnv reports invalid or missing required settings without leaking values', () => {
+  const result = validateRelayEnv({ SECRET_PREFIX: 'x', HWID: 'short', USER_AGENT: '', ALLOWED_HOSTS: 'a.com, bad host' });
+  assert.equal(result.ok, false);
+  assert.equal(result.missing.length, 4);
+  for (const entry of result.missing) assert.ok(!entry.includes('bad host'));
 });
 
 test('wrong secret resolves to 404 and does not reveal the relay', () => {
@@ -44,9 +42,12 @@ test('identityHeaders always sends x-hwid and user-agent, optional fields only w
   assert.deepEqual(Object.keys(minimal).sort(), ['user-agent', 'x-hwid']);
 });
 
-test('resolveTarget: bare token joins PANEL_BASE, full https URL is used as-is', () => {
-  assert.equal(resolveTarget(ENV, 'my-secret-1', 'token-uuid'), 'https://panel.example.com/sub/token-uuid');
+test('resolveTarget: full https URL is used as-is', () => {
   assert.equal(resolveTarget(ENV, 'my-secret-1', 'https://other.example.com/sub/t'), 'https://other.example.com/sub/t');
+});
+
+test('resolveTarget: bare tokens are rejected — a full panel URL is required', () => {
+  assert.throws(() => resolveTarget(ENV, 'my-secret-1', 'panel.example.com/sub/t'), /full https panel URL/);
 });
 
 test('resolveTarget: rejects http targets and disallowed hosts', () => {
@@ -59,9 +60,8 @@ test('resolveTarget: rejects http targets and disallowed hosts', () => {
   );
 });
 
-test('resolveTarget: relative tokens require PANEL_BASE', () => {
-  const { PANEL_BASE, ...withoutBase } = ENV;
-  assert.throws(() => resolveTarget(withoutBase, 'my-secret-1', 'token'), /PANEL_BASE/);
+test('resolveTarget: rejects credentials inside the target URL', () => {
+  assert.throws(() => resolveTarget(ENV, 'my-secret-1', 'https://user:pass@panel.example.com/sub/t'), /credentials/);
 });
 
 test('hostAllowed: empty allowlist permits everything; subdomains match their root', () => {

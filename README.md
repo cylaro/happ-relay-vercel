@@ -39,8 +39,7 @@ Project → **Settings** → **Environment Variables** → add (type **Plain Tex
 | `SECRET_PREFIX` | `kR9wTz4QmB7x` | yes (8+ chars, random — part of your links; keep private) |
 | `HWID` | `UE42LJXu4DbiCaBv` | yes (10–64 chars `A-Z a-z 0-9 = -`) |
 | `USER_AGENT` | `Happ/1.16.0 (iOS 18.3; iPhone 14 Pro)` | yes |
-| `PANEL_BASE` | `https://panel-provider.com/sub` | only for bare-token links (see Usage) |
-| `ALLOWED_HOSTS` | `panel-provider.com,other-panel.net` | optional (empty = any https host) |
+| `ALLOWED_HOSTS` | `panel-provider.com,other-panel.net` | optional (empty = any https host; comma-separated, spaces are trimmed) |
 | `DEVICE_OS` / `VER_OS` / `DEVICE_MODEL` | `iOS` / `18.3` / `iPhone 14 Pro` | optional |
 
 After changing variables, open **Deployments** → the latest deployment → **⋯ → Redeploy** — variables apply to new deployments only.
@@ -59,13 +58,12 @@ Cloudflare as DNS: zone → **DNS → Records** → A record `@` (or a subdomain
 Two link forms work side by side:
 
 ```text
-Bare token (uses PANEL_BASE):  https://your-domain.tld/<secret>/s/<token>
-Any allowed panel:             https://your-domain.tld/<secret>/s/https://panel-provider.com/sub/<token>
-Health:                        https://your-domain.tld/<secret>/health
+Subscription: https://your-domain.tld/<secret>/s/https://panel-provider.com/sub/<token>
+Health:       https://your-domain.tld/<secret>/health
 ```
 
 - The **secret prefix** is your private key: links without it return 404.
-- **`ALLOWED_HOSTS`** (comma-separated) limits which panel hosts the relay may fetch. Empty means any https host — fine for personal use, but an allowlist is safer if the link leaks.
+- **`ALLOWED_HOSTS`** (comma-separated, spaces are trimmed) limits which panel hosts the relay may fetch — safer if the link leaks. Empty means any https host.
 - Add the subscription URL in any client (Happ, v2RayTun, Streisand, Karing, …). Every device using this URL counts as **one device** at the panel, and updates flow normally.
 
 To verify the identity before connecting devices, use the Request tab of [happ-decryptor](https://github.com/cylaro/happ-decryptor): send the panel URL with the same headers and check the response.
@@ -73,7 +71,6 @@ To verify the identity before connecting devices, use the Request tab of [happ-d
 ## Notes
 
 - The relay is a plain HTTPS pipe: GET in, subscription out, no logging, no storage.
-- `PANEL_BASE` is optional — required only when you use bare tokens instead of full panel URLs.
 - Vercel Hobby (free) plan is sufficient for personal use (1M invocations, 100 GB transfer per month).
 
 ## Related projects

@@ -13,8 +13,6 @@ export function validateRelayEnv(env) {
   if (!/^[A-Za-z0-9_-]{8,}$/.test(String(env?.SECRET_PREFIX || ''))) missing.push('SECRET_PREFIX (8+ chars: A-Z a-z 0-9 _ -)');
   if (!HWID_PATTERN.test(String(env?.HWID || ''))) missing.push('HWID (10-64 chars: A-Z a-z 0-9 = -)');
   if (!env?.USER_AGENT) missing.push('USER_AGENT');
-  const base = String(env?.PANEL_BASE || '');
-  if (base && !/^https:\/\/[a-z0-9.-]+(:\d+)?(\/[^\s]*)?$/i.test(base)) missing.push('PANEL_BASE (https URL of the panel subscription endpoint)');
   const hosts = String(env?.ALLOWED_HOSTS || '');
   if (hosts.split(',').some(h => h.trim() && !/^[a-z0-9.-]+$/i.test(h.trim()))) missing.push('ALLOWED_HOSTS (comma-separated hostnames)');
   return { ok: missing.length === 0, missing };
@@ -48,37 +46,26 @@ export function hostAllowed(env, hostname) {
 }
 
 /**
- * Resolve the request secret + token path to an upstream URL.
- *   token is a bare token        -> PANEL_BASE + '/' + token (if configured)
- *   token is a full https URL    -> used as-is (host must pass ALLOWED_HOSTS if set)
- * Wrong secret -> error with status 404 (does not reveal the relay exists).
+ * Resolve the request secret + target URL to an upstream URL.
+ *   secret must equal SECRET_PREFIX (mismatch -> 404, does not reveal the relay)
+ *   tokenPath must be a full https URL of the panel subscription endpoint
+ *   host must pass ALLOWED_HOSTS if the allowlist is set
  */
 export function resolveTarget(env, secret, tokenPath) {
   const expected = String(env?.SECRET_PREFIX || '');
   if (!expected || secret !== expected) throw err('not found', 404);
 
   const raw = String(tokenPath || '').replace(/^\/+/, '');
-  if (/^https?:\/\//i.test(raw)) {
-    let url;
-    try {
-      url = new URL(raw);
-    } catch {
-      throw err('invalid target URL');
-    }
-    if (url.protocol !== 'https:') throw err('only https targets are allowed');
-    if (!hostAllowed(env, url.hostname)) throw err('target host is not allowed', 403);
-    return url.href;
-  }
+  if (!/^https:\/\//i.test(raw)) throw err('token must be a full https panel URL');
 
-  if (!env?.PANEL_BASE) throw err('PANEL_BASE is not configured for bare tokens');
-  const base = String(env.PANEL_BASE).replace(/\/+$/, '');
-  const target = `${base}/${raw}`;
+  let url;
   try {
-    const parsed = new URL(target);
-    if (!hostAllowed(env, parsed.hostname)) throw err('target host is not allowed', 403);
-  } catch (e) {
-    if (e.status) throw e;
-    throw err('invalid PANEL_BASE');
+    url = new URL(raw);
+  } catch {
+    throw err('invalid target URL');
   }
-  return target;
+  if (url.protocol !== 'https:') throw err('only https targets are allowed');
+  if (url.username || url.password) throw err('credentials in target URL are not allowed');
+  if (!hostAllowed(env, url.hostname)) throw err('target host is not allowed', 403);
+  return url.href;
 }
