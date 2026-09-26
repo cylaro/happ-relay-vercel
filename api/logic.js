@@ -47,16 +47,24 @@ export function hostAllowed(env, hostname) {
 
 /**
  * Resolve the request secret + target URL to an upstream URL.
- *   secret must equal SECRET_PREFIX (mismatch -> 404, does not reveal the relay)
- *   tokenPath must be a full https URL of the panel subscription endpoint
+ *   secret must equal SECRET_PREFIX (mismatch -> 404, does not reveal the relay exists)
+ *   tokenPath must point to the panel subscription endpoint:
+ *     full https URL (single or doubled slashes are tolerated)
+ *     or scheme-less host/path (https:// is assumed)
  *   host must pass ALLOWED_HOSTS if the allowlist is set
  */
 export function resolveTarget(env, secret, tokenPath) {
   const expected = String(env?.SECRET_PREFIX || '');
   if (!expected || secret !== expected) throw err('not found', 404);
 
-  const raw = String(tokenPath || '').replace(/^\/+/, '');
-  if (!/^https:\/\//i.test(raw)) throw err('token must be a full https panel URL');
+  let raw = String(tokenPath || '').replace(/^\/+/, '');
+  // Apps and CDNs sometimes collapse "https://" into "https:/": restore it.
+  raw = raw.replace(/^(https?):\/{1,}/i, '$1://');
+  if (!/^https:\/\//i.test(raw)) {
+    // Scheme-less host/path: assume https.
+    if (/^[a-z0-9.-]+\.[a-z]{2,}([/?#]|$)/i.test(raw)) raw = 'https://' + raw;
+    else throw err('token must be a full https panel URL');
+  }
 
   let url;
   try {

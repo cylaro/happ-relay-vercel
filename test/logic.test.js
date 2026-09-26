@@ -46,8 +46,13 @@ test('resolveTarget: full https URL is used as-is', () => {
   assert.equal(resolveTarget(ENV, 'my-secret-1', 'https://other.example.com/sub/t'), 'https://other.example.com/sub/t');
 });
 
+test('resolveTarget: collapsed and scheme-less URLs are normalized to https', () => {
+  assert.equal(resolveTarget(ENV, 'my-secret-1', 'https:/other.example.com/sub/t'), 'https://other.example.com/sub/t');
+  assert.equal(resolveTarget(ENV, 'my-secret-1', 'other.example.com/sub/t'), 'https://other.example.com/sub/t');
+});
+
 test('resolveTarget: bare tokens are rejected — a full panel URL is required', () => {
-  assert.throws(() => resolveTarget(ENV, 'my-secret-1', 'panel.example.com/sub/t'), /full https panel URL/);
+  assert.throws(() => resolveTarget(ENV, 'my-secret-1', 't'), /full https panel URL/);
 });
 
 test('resolveTarget: rejects http targets and disallowed hosts', () => {
