@@ -1,5 +1,6 @@
 # happ-relay-vercel
 
+[![Tests](https://github.com/cylaro/happ-relay-vercel/actions/workflows/test.yml/badge.svg)](https://github.com/cylaro/happ-relay-vercel/actions/workflows/test.yml)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fcylaro%2Fhapp-relay-vercel)
 
 **A one-file subscription relay on Vercel: connect many devices to a panel with a HWID device limit — the panel sees exactly one device.**
@@ -12,7 +13,7 @@ Panels such as [Remnawave](https://docs.rw/features/hwid-device-limit) count uni
 
 ```
 Phone 1 ─┐
-Phone 2 ─┤   https://your-domain.tld/<secret>/s/<token>
+Phone 2 ─┤   https://your-domain.tld/<secret>/s/<target>
 Laptop  ─┤              │
 TV      ─┘              ▼  fixed identity: one x-hwid, one User-Agent
                  Vercel Function (yours)
@@ -31,24 +32,20 @@ Press the **Deploy** button above, or [vercel.com/new](https://vercel.com/new) �
 
 ### 2. Set the environment variables
 
-Project → **Settings** → **Environment Variables** → add:
+Project → **Settings** → **Environment Variables** → add (type **Plain Text** or **Secret**, environment **Production**):
 
 | Name | Example | Required |
 |---|---|---|
-| `PANEL_BASE` | `https://panel-provider.com/sub` | yes (https, no token) |
+| `SECRET_PREFIX` | `kR9wTz4QmB7x` | yes (8+ chars, random — part of your links; keep private) |
 | `HWID` | `UE42LJXu4DbiCaBv` | yes (10–64 chars `A-Z a-z 0-9 = -`) |
 | `USER_AGENT` | `Happ/1.16.0 (iOS 18.3; iPhone 14 Pro)` | yes |
-| `DEVICE_OS` | `iOS` | optional |
-| `VER_OS` | `18.3` | optional |
-| `DEVICE_MODEL` | `iPhone 14 Pro` | optional |
+| `PANEL_BASE` | `https://panel-provider.com/sub` | only for bare-token links (see Usage) |
+| `ALLOWED_HOSTS` | `panel-provider.com,other-panel.net` | optional (empty = any https host) |
+| `DEVICE_OS` / `VER_OS` / `DEVICE_MODEL` | `iOS` / `18.3` / `iPhone 14 Pro` | optional |
 
 After changing variables, open **Deployments** → the latest deployment → **⋯ → Redeploy** — variables apply to new deployments only.
 
-### 3. Change the secret path prefix
-
-Open [`vercel.json`](vercel.json) and replace `vx42Kq9m` in both routes with your own random string (8+ characters). This prefix is part of the subscription link and protects it from strangers.
-
-### 4. Attach a domain
+### 3. Attach a domain
 
 Project → **Settings → Domains** → **Add** → your domain.
 
@@ -59,21 +56,25 @@ Cloudflare as DNS: zone → **DNS → Records** → A record `@` (or a subdomain
 
 ## Usage
 
+Two link forms work side by side:
+
 ```text
-Health:    https://your-domain.tld/<secret>/health
-Subscribe: https://your-domain.tld/<secret>/s/<your-subscription-token>
+Bare token (uses PANEL_BASE):  https://your-domain.tld/<secret>/s/<token>
+Any allowed panel:             https://your-domain.tld/<secret>/s/https://panel-provider.com/sub/<token>
+Health:                        https://your-domain.tld/<secret>/health
 ```
 
-Add the subscription URL in any client (Happ, v2RayTun, Streisand, Karing, …). Every device using this URL counts as **one device** at the panel, and updates flow normally.
+- The **secret prefix** is your private key: links without it return 404.
+- **`ALLOWED_HOSTS`** (comma-separated) limits which panel hosts the relay may fetch. Empty means any https host — fine for personal use, but an allowlist is safer if the link leaks.
+- Add the subscription URL in any client (Happ, v2RayTun, Streisand, Karing, …). Every device using this URL counts as **one device** at the panel, and updates flow normally.
 
 To verify the identity before connecting devices, use the Request tab of [happ-decryptor](https://github.com/cylaro/happ-decryptor): send the panel URL with the same headers and check the response.
 
 ## Notes
 
-- The subscription token stays in the device link; the panel address never leaves the worker configuration.
-- Keep the link private: anyone with it consumes your traffic under your identity.
-- The `PANEL_BASE` target must be reachable from Vercel's network (datacenter IPs are blocked by some providers — if the panel returns empty responses, test it directly first).
-- Vercel Hobby (free) plan is sufficient for personal use.
+- The relay is a plain HTTPS pipe: GET in, subscription out, no logging, no storage.
+- `PANEL_BASE` is optional — required only when you use bare tokens instead of full panel URLs.
+- Vercel Hobby (free) plan is sufficient for personal use (1M invocations, 100 GB transfer per month).
 
 ## Related projects
 
