@@ -7,6 +7,16 @@ const HWID_PATTERN = /^[A-Za-z0-9=-]{10,64}$/;
 
 const err = (message, status = 400) => Object.assign(new Error(message), { status });
 
+/** Length-safe constant-time string comparison (length itself is public — it is in the URL). */
+export function safeEqual(a, b) {
+  const A = new TextEncoder().encode(String(a));
+  const B = new TextEncoder().encode(String(b));
+  if (A.length !== B.length) return false;
+  let diff = 0;
+  for (let i = 0; i < A.length; i++) diff |= A[i] ^ B[i];
+  return diff === 0;
+}
+
 /** Check project configuration. Returns { ok, missing } without leaking values. */
 export function validateRelayEnv(env) {
   const missing = [];
@@ -55,7 +65,7 @@ export function hostAllowed(env, hostname) {
  */
 export function resolveTarget(env, secret, tokenPath) {
   const expected = String(env?.SECRET_PREFIX || '');
-  if (!expected || secret !== expected) throw err('not found', 404);
+  if (!expected || !safeEqual(secret, expected)) throw err('not found', 404);
 
   let raw = String(tokenPath || '').trim().replace(/^\/+/, '');
   // Apps and CDNs sometimes collapse "https://" into "https:/": restore it.

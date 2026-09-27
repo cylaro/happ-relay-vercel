@@ -78,6 +78,14 @@ Cloudflare как DNS: зона → **DNS → Records** → A-запись `@` (
 - [happ-decryptor](https://github.com/cylaro/happ-decryptor) — расшифровка `happ://crypt…`-ссылок, редактирование URL, запросы с заголовками устройства.
 - [hwid-relay](https://github.com/cylaro/hwid-relay) — тот же релей на Cloudflare Workers, если удобнее эта платформа.
 
+## Поддержать / Donate
+
+Если проект был полезен — можно поддержать разработку, **USDT в сети TON**:
+
+```text
+UQCcN9hahBxM5q3GGwx79UNEu82EF0kFTwnRRklL_1OLtK15
+```
+
 ## Дисклеймер
 
 Образовательный проект. Ответственность за соблюдение условий провайдера и законодательства несёте вы. Не связан с Happ или Remnawave. Без гарантий — см. [LICENSE](LICENSE).

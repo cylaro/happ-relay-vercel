@@ -78,6 +78,14 @@ To verify the identity before connecting devices, use the Request tab of [happ-d
 - [happ-decryptor](https://github.com/cylaro/happ-decryptor) — decrypt `happ://crypt…` links, edit subscription URLs, send requests with device headers.
 - [hwid-relay](https://github.com/cylaro/hwid-relay) — the same relay on Cloudflare Workers, if you prefer that platform.
 
+## Support / Donate
+
+If this project helped you, consider a donation — **USDT on the TON network**:
+
+```text
+UQCcN9hahBxM5q3GGwx79UNEu82EF0kFTwnRRklL_1OLtK15
+```
+
 ## Disclaimer
 
 Educational project. You are responsible for complying with your provider's terms of service and applicable law. Not affiliated with Happ or Remnawave. No warranty — see [LICENSE](LICENSE).

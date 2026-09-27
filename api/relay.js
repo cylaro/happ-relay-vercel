@@ -30,7 +30,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const upstream = await fetch(target, { headers: identityHeaders(env), redirect: 'follow' });
+    const upstream = await fetch(target, {
+      headers: identityHeaders(env),
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15000),
+    });
+    const declaredLength = Number(upstream.headers.get('content-length') || 0);
+    if (declaredLength > 2 * 1024 * 1024) {
+      res.status(502).send('upstream response too large');
+      return;
+    }
     res.status(upstream.status);
     res.setHeader('cache-control', 'no-store');
     for (const name of PASS_HEADERS) {
