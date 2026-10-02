@@ -1,7 +1,7 @@
-# happ-relay-vercel
+# hwid-relay-vercel
 
-[![Tests](https://github.com/cylaro/happ-relay-vercel/actions/workflows/test.yml/badge.svg)](https://github.com/cylaro/happ-relay-vercel/actions/workflows/test.yml)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fcylaro%2Fhapp-relay-vercel)
+[![Tests](https://github.com/cylaro/hwid-relay-vercel/actions/workflows/test.yml/badge.svg)](https://github.com/cylaro/hwid-relay-vercel/actions/workflows/test.yml)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fcylaro%2Fhwid-relay-vercel)
 
 **Релей подписки на Vercel: подключайте сколько угодно устройств к панели с лимитом HWID — панель видит ровно одно устройство.**
 
@@ -11,7 +11,7 @@
 
 Панели вроде [Remnawave](https://docs.rw/features/hwid-device-limit) считают уникальные значения заголовка `x-hwid` на пользователя, а каждое приложение генерирует своё значение. Десять устройств превращаются в десять «устройств» и упираются в лимит. Значение формирует клиент и не меняется в приложении — но можно изменить **точку подключения**:
 
-![Архитектура happ-relay-vercel: много устройств — один HWID на панели](docs/architecture.svg)
+![Архитектура hwid-relay-vercel: много устройств — один HWID на панели](docs/architecture.svg)
 
 Приложения работают как обычно — релей это обычный HTTPS-адрес, возвращающий подписку с вашей идентичностью.
 
