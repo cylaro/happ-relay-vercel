@@ -57,7 +57,7 @@ Health:       https://your-domain.tld/<secret>/health
 - **`ALLOWED_HOSTS`** (comma-separated, spaces are trimmed) limits which panel hosts the relay may fetch — safer if the link leaks. Empty means any https host.
 - Add the subscription URL in any client (Happ, v2RayTun, Streisand, Karing, …). Every device using this URL counts as **one device** at the panel, and updates flow normally.
 
-To verify the identity before connecting devices, use the Request tab of [happ-decryptor](https://github.com/cylaro/happ-decryptor): send the panel URL with the same headers and check the response.
+To verify the identity before connecting devices, use the Request tab of [happ-decryptor](https://github.com/cylaro/happ-decrypt): send the panel URL with the same headers and check the response.
 
 ## Notes
 
@@ -66,7 +66,7 @@ To verify the identity before connecting devices, use the Request tab of [happ-d
 
 ## Related projects
 
-- [happ-decryptor](https://github.com/cylaro/happ-decryptor) — decrypt `happ://crypt…` links, edit subscription URLs, send requests with device headers.
+- [happ-decryptor](https://github.com/cylaro/happ-decrypt) — decrypt `happ://crypt…` links, edit subscription URLs, send requests with device headers.
 - [happ-relay-cloudflare](https://github.com/cylaro/happ-relay-cloudflare) — the same relay on Cloudflare Workers, if you prefer that platform.
 
 ## Support / Donate

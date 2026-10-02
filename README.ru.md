@@ -57,7 +57,7 @@ Cloudflare как DNS: зона → **DNS → Records** → A-запись `@` (
 - **`ALLOWED_HOSTS`** (через запятую, пробелы обрезаются) ограничивает, с каких доменов панелей релей может забирать подписки — безопаснее на случай утечки ссылки. Пусто = любой https-хост.
 - Добавьте ссылку в любой клиент (Happ, v2RayTun, Streisand, Karing, …). Все устройства с этой ссылкой считаются на панели **одним устройством**, обновления работают нормально.
 
-Проверить идентичность до подключения устройств можно вкладкой Request проекта [happ-decryptor](https://github.com/cylaro/happ-decryptor): отправьте URL панели с теми же заголовками и посмотрите ответ.
+Проверить идентичность до подключения устройств можно вкладкой Request проекта [happ-decryptor](https://github.com/cylaro/happ-decrypt): отправьте URL панели с теми же заголовками и посмотрите ответ.
 
 ## Примечания
 
@@ -66,7 +66,7 @@ Cloudflare как DNS: зона → **DNS → Records** → A-запись `@` (
 
 ## Связанные проекты
 
-- [happ-decryptor](https://github.com/cylaro/happ-decryptor) — расшифровка `happ://crypt…`-ссылок, редактирование URL, запросы с заголовками устройства.
+- [happ-decryptor](https://github.com/cylaro/happ-decrypt) — расшифровка `happ://crypt…`-ссылок, редактирование URL, запросы с заголовками устройства.
 - [happ-relay-cloudflare](https://github.com/cylaro/happ-relay-cloudflare) — тот же релей на Cloudflare Workers, если удобнее эта платформа.
 
 ## Поддержать / Donate
