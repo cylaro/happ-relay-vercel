@@ -1,7 +1,7 @@
-# hwid-relay-vercel
+# happ-relay-cloudflare-vercel
 
-[![Tests](https://github.com/cylaro/hwid-relay-vercel/actions/workflows/test.yml/badge.svg)](https://github.com/cylaro/hwid-relay-vercel/actions/workflows/test.yml)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fcylaro%2Fhwid-relay-vercel)
+[![Tests](https://github.com/cylaro/happ-relay-cloudflare-vercel/actions/workflows/test.yml/badge.svg)](https://github.com/cylaro/happ-relay-cloudflare-vercel/actions/workflows/test.yml)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fcylaro%2Fhapp-relay-cloudflare-vercel)
 
 **Релей подписки на Vercel: подключайте сколько угодно устройств к панели с лимитом HWID — панель видит ровно одно устройство.**
 
@@ -11,7 +11,7 @@
 
 Панели вроде [Remnawave](https://docs.rw/features/hwid-device-limit) считают уникальные значения заголовка `x-hwid` на пользователя, а каждое приложение генерирует своё значение. Десять устройств превращаются в десять «устройств» и упираются в лимит. Значение формирует клиент и не меняется в приложении — но можно изменить **точку подключения**:
 
-![Архитектура hwid-relay-vercel: много устройств — один HWID на панели](docs/architecture.svg)
+![Архитектура happ-relay-cloudflare-vercel: много устройств — один HWID на панели](docs/architecture.svg)
 
 Приложения работают как обычно — релей это обычный HTTPS-адрес, возвращающий подписку с вашей идентичностью.
 
@@ -67,7 +67,7 @@ Cloudflare как DNS: зона → **DNS → Records** → A-запись `@` (
 ## Связанные проекты
 
 - [happ-decryptor](https://github.com/cylaro/happ-decryptor) — расшифровка `happ://crypt…`-ссылок, редактирование URL, запросы с заголовками устройства.
-- [hwid-relay](https://github.com/cylaro/hwid-relay) — тот же релей на Cloudflare Workers, если удобнее эта платформа.
+- [happ-relay-cloudflare](https://github.com/cylaro/happ-relay-cloudflare) — тот же релей на Cloudflare Workers, если удобнее эта платформа.
 
 ## Поддержать / Donate
 
