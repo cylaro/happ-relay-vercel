@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { escapeHtml, hostAllowed, identityHeaders, listServers, parseSubscriptionUris, resolveTarget, uriName, validateRelayEnv } from '../api/logic.js';
+import { escapeHtml, hostAllowed, identityHeaders, listServers, outboundToUri, parseSubscriptionUris, resolveTarget, uriName, validateRelayEnv } from '../api/logic.js';
 
 const ENV = {
   SECRET_PREFIX: 'my-secret-1',
@@ -88,6 +88,58 @@ test('parseSubscriptionUris: plain text and base64 bodies', () => {
   assert.deepEqual(parseSubscriptionUris(text), ['vless://a-uuid@host:443#Node1', 'ss://b#Node2']);
   const encoded = Buffer.from('vless://a#One\nvless://b#Two', 'utf8').toString('base64');
   assert.deepEqual(parseSubscriptionUris(encoded), ['vless://a#One', 'vless://b#Two']);
+});
+
+const XRAY_CONFIG = JSON.stringify({
+  outbounds: [
+    {
+      tag: 'cfg',
+      protocol: 'vless',
+      settings: { vnext: [{ address: '1.2.3.4', port: 22846, users: [{ id: 'uuid-1', encryption: 'none', flow: 'xtls-rprx-vision' }] }] },
+      streamSettings: {
+        network: 'tcp',
+        security: 'reality',
+        realitySettings: { serverName: 'yahoo.com', fingerprint: 'chrome', publicKey: 'pbk-x', shortId: 'sid-x' },
+      },
+    },
+    {
+      tag: 'hy2 out',
+      protocol: 'hysteria2',
+      settings: { servers: [{ address: 'hy.example.com', port: 8443 }] },
+      streamSettings: { network: 'tcp', security: 'tls', tlsSettings: { serverName: 'hy.example.com' } },
+    },
+    { tag: 'blocked', protocol: 'blackhole', settings: {} },
+  ],
+});
+
+test('parseSubscriptionUris: Xray JSON config is converted to URIs', () => {
+  const uris = parseSubscriptionUris(XRAY_CONFIG);
+  assert.equal(uris.length, 2);
+  assert.match(uris[0], /^vless:\/\/uuid-1@1\.2\.3\.4:22846\?/);
+  assert.match(uris[0], /type=tcp/);
+  assert.match(uris[0], /security=reality/);
+  assert.match(uris[0], /sni=yahoo\.com/);
+  assert.match(uris[0], /pbk=pbk-x/);
+  assert.match(uris[0], /flow=xtls-rprx-vision/);
+  assert.match(uris[0], /#cfg$/);
+  assert.match(uris[1], /^hysteria2:\/\/hy\.example\.com:8443\?.*sni=hy\.example\.com.*#hy2%20out$/);
+});
+
+test('outboundToUri: vmess outbound becomes base64 JSON link; non-server outbound yields null', () => {
+  const vmess = outboundToUri({
+    protocol: 'vmess',
+    settings: { vnext: [{ address: 'v.example.com', port: 443, users: [{ id: 'vm-id', alterId: 0 }] }] },
+    streamSettings: { network: 'ws', security: 'tls', tlsSettings: { serverName: 'v.example.com' }, wsSettings: { path: '/ws' } },
+  });
+  assert.match(vmess, /^vmess:\/\//);
+  const decoded = JSON.parse(Buffer.from(vmess.slice(8), 'base64').toString('utf8'));
+  assert.equal(decoded.add, 'v.example.com');
+  assert.equal(decoded.id, 'vm-id');
+  assert.equal(decoded.net, 'ws');
+  assert.equal(decoded.tls, 'tls');
+  assert.equal(decoded.path, '/ws');
+  assert.equal(outboundToUri({ protocol: 'freedom', settings: {} }), null);
+  assert.equal(outboundToUri({ protocol: 'vless', settings: { vnext: [] } }), null);
 });
 
 test('uriName: decodes fragment, falls back to empty', () => {
