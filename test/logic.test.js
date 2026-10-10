@@ -51,7 +51,7 @@ test('resolveTarget: collapsed and scheme-less URLs are normalized to https', ()
   assert.equal(resolveTarget(ENV, 'my-secret-1', 'other.example.com/sub/t'), 'https://other.example.com/sub/t');
 });
 
-test('resolveTarget: bare tokens are rejected — a full panel URL is required', () => {
+test('resolveTarget: bare tokens are rejected вЂ” a full panel URL is required', () => {
   assert.throws(() => resolveTarget(ENV, 'my-secret-1', 't'), /full https panel URL/);
 });
 
@@ -141,6 +141,52 @@ test('parseSubscriptionUris: loopback placeholder outbounds (127.0.0.1) are skip
   assert.match(uris[0], /real\.example\.com/);
 });
 
+const TRANSPORT_MATRIX = [
+  ['ws',    { wsSettings: { path: '/wspath', headers: { Host: 'h.example.com' } } },          'type=ws&path=%2Fwspath&host=h.example.com'],
+  ['grpc',  { grpcSettings: { serviceName: 'svc', authority: 'au', multiMode: true } },       'type=grpc&serviceName=svc&authority=au&mode=multi'],
+  ['kcp',   { kcpSettings: { header: { type: 'dtls' }, seed: 's3cret', mtu: 1400, tti: 50 } }, 'type=kcp&headerType=dtls&seed=s3cret&mtu=1400&tti=50'],
+  ['httpupgrade', { httpupgradeSettings: { path: '/hu', host: 'h.example.com' } },            'type=httpupgrade&path=%2Fhu&host=h.example.com'],
+  ['xhttp', { xhttpSettings: { mode: 'auto', host: 'x.example.com', path: '/plxh' } },        'type=xhttp&path=%2Fplxh&host=x.example.com&mode=auto'],
+  ['tcp',   { tcpSettings: { header: { type: 'http', request: { path: ['/p'], headers: { Host: 'h.example.com' } } } } }, 'type=tcp&headerType=http&path=%2Fp&host=h.example.com'],
+];
+
+test('streamParams: every Xray transport maps to its documented share-link parameters', () => {
+  for (const [network, settings, expected] of TRANSPORT_MATRIX) {
+    const uri = outboundToUri({
+      protocol: 'vless',
+      settings: { vnext: [{ address: 'h.example.com', port: 443, users: [{ id: 'u1', encryption: 'none' }] }] },
+      streamSettings: { network, ...settings, security: 'tls', tlsSettings: { serverName: 'sni.example.com' } },
+    });
+    assert.ok(uri, network);
+    const query = uri.slice(uri.indexOf('?'), uri.indexOf('#'));
+    for (const pair of expected.split('&')) {
+      assert.ok(query.includes(pair), `${network}: query "${query}" lacks "${pair}"`);
+    }
+    assert.ok(query.includes('security=tls'), `${network}: security=tls missing`);
+    assert.ok(query.includes('sni=sni.example.com'), `${network}: sni missing`);
+  }
+});
+
+test('outboundToUri: reality shortId array takes first value; IPv6 is bracketed; hysteria2 obfs from finalmask', () => {
+  const v6 = outboundToUri({
+    protocol: 'vless',
+    settings: { vnext: [{ address: '2001:db8::1', port: 443, users: [{ id: 'u1', encryption: 'none' }] }] },
+    streamSettings: { network: 'tcp', security: 'reality', realitySettings: { serverName: 'sni', shortIds: ['aa', 'bb'], publicKey: 'pbk', fingerprint: 'chrome', spiderX: '/' } },
+  });
+  assert.ok(v6.includes('@[2001:db8::1]:443'), v6);
+  assert.ok(v6.includes('sid=aa'), v6);
+  assert.ok(v6.includes('spx=%2F'), v6);
+
+  const hy2 = outboundToUri({
+    protocol: 'hysteria2',
+    settings: { servers: [{ address: 'hy.example.com', port: 8443 }], password: 'pw' },
+    streamSettings: { network: 'tcp', security: 'tls', tlsSettings: { serverName: 'hy.example.com' }, finalmask: { udp: [{ type: 'salamander', settings: { password: 'obfspw' } }] } },
+  });
+  assert.match(hy2, /^hysteria2:\/\/pw@hy\.example\.com:8443\?/);
+  assert.ok(hy2.includes('obfs=salamander'));
+  assert.ok(hy2.includes('obfs-password=obfspw'));
+});
+
 test('outboundToUri: vmess outbound becomes base64 JSON link; non-server outbound yields null', () => {
   const vmess = outboundToUri({
     protocol: 'vmess',
@@ -164,9 +210,9 @@ test('uriName: decodes fragment, falls back to empty', () => {
 });
 
 test('listServers: names, indexes and order preserved; default name when no fragment', () => {
-  const servers = listServers('vless://a#Франкфурт\nvless://b');
+  const servers = listServers('vless://a#Р¤СЂР°РЅРєС„СѓСЂС‚\nvless://b');
   assert.deepEqual(servers, [
-    { index: 1, name: 'Франкфурт', uri: 'vless://a#Франкфурт' },
+    { index: 1, name: 'Р¤СЂР°РЅРєС„СѓСЂС‚', uri: 'vless://a#Р¤СЂР°РЅРєС„СѓСЂС‚' },
     { index: 2, name: 'Server 2', uri: 'vless://b' },
   ]);
 });
@@ -177,25 +223,25 @@ test('escapeHtml escapes dangerous characters', () => {
 
 test('flagImage: converts emoji flag to flagcdn URL; empty without flag', () => {
   assert.equal(flagImage('🇵🇱 9 | Польша'), 'https://flagcdn.com/w40/pl.png');
-  assert.equal(flagImage('🇦🇹 13 Австрия'), 'https://flagcdn.com/w40/at.png');
-  assert.equal(flagImage('Без флага'), '');
+  assert.equal(flagImage('🇦🇹 13 РђРІСЃС‚СЂРёСЏ'), 'https://flagcdn.com/w40/at.png');
+  assert.equal(flagImage('Р‘РµР· С„Р»Р°РіР°'), '');
 });
 
 test('parseSubscriptionUris: JSON entries with identical endpoints are NOT deduplicated (each remark = one server)', () => {
   const cfg = JSON.stringify([
     {
-      remarks: '🇷🇺 1 | Белые списки',
+      remarks: '🇷🇺 1 | Р‘РµР»С‹Рµ СЃРїРёСЃРєРё',
       outbounds: [{ tag: 'proxy', protocol: 'vless', settings: { vnext: [{ address: 'same.example.com', port: 443, users: [{ id: 'u' }] }] } }],
     },
     {
-      remarks: '🇷🇺 2 | Белые списки',
+      remarks: '🇷🇺 2 | Р‘РµР»С‹Рµ СЃРїРёСЃРєРё',
       outbounds: [{ tag: 'proxy', protocol: 'vless', settings: { vnext: [{ address: 'same.example.com', port: 443, users: [{ id: 'u' }] }] } }],
     },
   ]);
   const uris = parseSubscriptionUris(cfg);
   assert.equal(uris.length, 2);
-  assert.equal(uriName(uris[0]), '🇷🇺 1 | Белые списки');
-  assert.equal(uriName(uris[1]), '🇷🇺 2 | Белые списки');
+  assert.equal(uriName(uris[0]), '🇷🇺 1 | Р‘РµР»С‹Рµ СЃРїРёСЃРєРё');
+  assert.equal(uriName(uris[1]), '🇷🇺 2 | Р‘РµР»С‹Рµ СЃРїРёСЃРєРё');
 });
 
 test('parseSubscriptionUris: plain text duplicates are still collapsed', () => {
