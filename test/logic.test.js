@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { escapeHtml, hostAllowed, identityHeaders, listServers, outboundToUri, parseSubscriptionUris, resolveTarget, uriName, validateRelayEnv } from '../api/logic.js';
+import { escapeHtml, flagImage, hostAllowed, identityHeaders, listServers, outboundToUri, parseSubscriptionUris, resolveTarget, uriName, validateRelayEnv } from '../api/logic.js';
 
 const ENV = {
   SECRET_PREFIX: 'my-secret-1',
@@ -173,4 +173,31 @@ test('listServers: names, indexes and order preserved; default name when no frag
 
 test('escapeHtml escapes dangerous characters', () => {
   assert.equal(escapeHtml('<img src=x onerror="alert(1)">&\''), '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;&amp;&#39;');
+});
+
+test('flagImage: converts emoji flag to flagcdn URL; empty without flag', () => {
+  assert.equal(flagImage('🇵🇱 9 | Польша'), 'https://flagcdn.com/w40/pl.png');
+  assert.equal(flagImage('🇦🇹 13 Австрия'), 'https://flagcdn.com/w40/at.png');
+  assert.equal(flagImage('Без флага'), '');
+});
+
+test('parseSubscriptionUris: JSON entries with identical endpoints are NOT deduplicated (each remark = one server)', () => {
+  const cfg = JSON.stringify([
+    {
+      remarks: '🇷🇺 1 | Белые списки',
+      outbounds: [{ tag: 'proxy', protocol: 'vless', settings: { vnext: [{ address: 'same.example.com', port: 443, users: [{ id: 'u' }] }] } }],
+    },
+    {
+      remarks: '🇷🇺 2 | Белые списки',
+      outbounds: [{ tag: 'proxy', protocol: 'vless', settings: { vnext: [{ address: 'same.example.com', port: 443, users: [{ id: 'u' }] }] } }],
+    },
+  ]);
+  const uris = parseSubscriptionUris(cfg);
+  assert.equal(uris.length, 2);
+  assert.equal(uriName(uris[0]), '🇷🇺 1 | Белые списки');
+  assert.equal(uriName(uris[1]), '🇷🇺 2 | Белые списки');
+});
+
+test('parseSubscriptionUris: plain text duplicates are still collapsed', () => {
+  assert.deepEqual(parseSubscriptionUris('vless://a#One\nvless://a#One'), ['vless://a#One']);
 });
