@@ -1,5 +1,5 @@
-﻿/**
- * Pure relay logic вЂ” no Vercel-specific APIs, unit-testable in Node.
+/**
+ * Pure relay logic -- no Vercel-specific APIs, unit-testable in Node.
  * Shared by /api/relay and /api/health.
  */
 
@@ -7,7 +7,7 @@ const HWID_PATTERN = /^[A-Za-z0-9=-]{10,64}$/;
 
 const err = (message, status = 400) => Object.assign(new Error(message), { status });
 
-/** Length-safe constant-time string comparison (length itself is public вЂ” it is in the URL). */
+/** Length-safe constant-time string comparison (length itself is public -- it is in the URL). */
 export function safeEqual(a, b) {
   const A = new TextEncoder().encode(String(a));
   const B = new TextEncoder().encode(String(b));
@@ -70,7 +70,7 @@ export function resolveTarget(env, secret, tokenPath) {
   let raw = String(tokenPath || '').trim().replace(/^\/+/, '');
   // Apps and CDNs sometimes collapse "https://" into "https:/": restore it.
   raw = raw.replace(/^(https?):\/{1,}/i, '$1://');
-  if (/^happ:\/\//i.test(raw)) throw err('this is an encrypted happ link вЂ” decrypt it first with happ-decryptor');
+  if (/^happ:\/\//i.test(raw)) throw err('this is an encrypted happ link -- decrypt it first with happ-decryptor');
   if (!/^https:\/\//i.test(raw)) {
     // Scheme-less host/path: assume https.
     if (/^[a-z0-9.-]+\.[a-z]{2,}([/?#]|$)/i.test(raw)) raw = 'https://' + raw;
@@ -330,9 +330,9 @@ export function parseJsonSubscription(text) {
 }
 
 /**
- * Extract proxy URIs (vless://, vmess://, ss://, вЂ¦) from a subscription body:
+ * Extract proxy URIs (vless://, vmess://, ss://, ...) from a subscription body:
  * Xray/V2Ray JSON config, plain text, base64 text, or a mix. Order is preserved.
- * Each JSON config element is one server entry (like in Happ) вЂ” no deduplication,
+ * Each JSON config element is one server entry (as in Happ) -- no deduplication,
  * because different entries may intentionally share the same endpoint.
  */
 export function parseSubscriptionUris(text) {
@@ -370,7 +370,7 @@ export function listServers(text) {
 }
 
 /**
- * Regional-indicator emoji flag ("рџ‡µрџ‡±") -> image URL with the same flag.
+ * Regional-indicator emoji flag ("PL") -> image URL with the same flag.
  * Falls back to an empty string when the name has no flag.
  */
 export function flagImage(name) {
@@ -390,17 +390,17 @@ export function serversHtml(servers) {
     <h2>${flagHtml}<span class="num">${escapeHtml(s.index)}.</span> ${escapeHtml(s.name)}</h2>
     <code>${escapeHtml(s.uri)}</code>
     <div class="actions">
-      <a href="${escapeHtml(s.uri)}">РџРѕРґРєР»СЋС‡РёС‚СЊ</a>
-      <a href="${escapeHtml(s.uri)}" class="copy" data-uri="${escapeHtml(s.uri)}">РљРѕРїРёСЂРѕРІР°С‚СЊ</a>
+      <a href="${escapeHtml(s.uri)}">Connect</a>
+      <a href="${escapeHtml(s.uri)}" class="copy" data-uri="${escapeHtml(s.uri)}">Copy</a>
     </div>
   </section>`;
   }).join('\n');
   return `<!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>РЎРµСЂРІРµСЂС‹ РїРѕРґРїРёСЃРєРё (${servers.length})</title>
+<title>Subscription servers (${servers.length})</title>
 <style>
   :root { color-scheme: dark; }
   body { font-family: system-ui, sans-serif; background: #12161d; color: #dde3ea; margin: 0 auto; padding: 1rem; max-width: 46rem; }
@@ -416,13 +416,13 @@ export function serversHtml(servers) {
 </style>
 </head>
 <body>
-<h1>РЎРµСЂРІРµСЂС‹ РїРѕРґРїРёСЃРєРё (${servers.length})</h1>
+<h1>Subscription servers (${servers.length})</h1>
 ${cards}
 <script>
 document.querySelectorAll('a.copy').forEach(a => a.addEventListener('click', e => {
   e.preventDefault();
   navigator.clipboard.writeText(a.dataset.uri).then(() => {
-    const t = a.textContent; a.textContent = 'РЎРєРѕРїРёСЂРѕРІР°РЅРѕ';
+    const t = a.textContent; a.textContent = 'Copied';
     setTimeout(() => { a.textContent = t; }, 1200);
   });
 }));
