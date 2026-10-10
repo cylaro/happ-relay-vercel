@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/:secret/s/:token*", "destination": "/api/relay?secret=:secret&token=:token*" },
+    { "source": "/:secret/l/:token*", "destination": "/api/relay?secret=:secret&token=:token*&mode=list" },
     { "source": "/:secret/health", "destination": "/api/health" }
   ]
 }

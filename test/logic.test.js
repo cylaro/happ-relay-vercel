@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { hostAllowed, identityHeaders, resolveTarget, validateRelayEnv } from '../api/logic.js';
+import { escapeHtml, hostAllowed, identityHeaders, listServers, parseSubscriptionUris, resolveTarget, uriName, validateRelayEnv } from '../api/logic.js';
 
 const ENV = {
   SECRET_PREFIX: 'my-secret-1',
@@ -81,4 +81,28 @@ test('hostAllowed: empty allowlist permits everything; subdomains match their ro
   assert.equal(hostAllowed(limited, 'sub.panel.example.com'), true);
   assert.equal(hostAllowed(limited, 'example.com'), false);
   assert.equal(hostAllowed(limited, 'evil-panel.example.com'), false);
+});
+
+test('parseSubscriptionUris: plain text and base64 bodies', () => {
+  const text = 'vless://a-uuid@host:443#Node1\nss://b#Node2\n\nnot-a-uri';
+  assert.deepEqual(parseSubscriptionUris(text), ['vless://a-uuid@host:443#Node1', 'ss://b#Node2']);
+  const encoded = Buffer.from('vless://a#One\nvless://b#Two', 'utf8').toString('base64');
+  assert.deepEqual(parseSubscriptionUris(encoded), ['vless://a#One', 'vless://b#Two']);
+});
+
+test('uriName: decodes fragment, falls back to empty', () => {
+  assert.equal(uriName('vless://a@h:443?x=1#%D0%9D%D0%BE%D0%B4%D0%B0%201'), 'Нода 1');
+  assert.equal(uriName('vless://a@h:443'), '');
+});
+
+test('listServers: names, indexes and order preserved; default name when no fragment', () => {
+  const servers = listServers('vless://a#Франкфурт\nvless://b');
+  assert.deepEqual(servers, [
+    { index: 1, name: 'Франкфурт', uri: 'vless://a#Франкфурт' },
+    { index: 2, name: 'Server 2', uri: 'vless://b' },
+  ]);
+});
+
+test('escapeHtml escapes dangerous characters', () => {
+  assert.equal(escapeHtml('<img src=x onerror="alert(1)">&\''), '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;&amp;&#39;');
 });

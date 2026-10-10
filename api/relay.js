@@ -1,4 +1,4 @@
-import { identityHeaders, resolveTarget, validateRelayEnv } from './logic.js';
+import { identityHeaders, resolveTarget, validateRelayEnv, listServers, serversHtml } from './logic.js';
 
 const PASS_HEADERS = [
   'content-type',
@@ -40,6 +40,24 @@ export default async function handler(req, res) {
       res.status(502).send('upstream response too large');
       return;
     }
+
+    if (req.query.mode === 'list') {
+      const text = await upstream.text();
+      if (!upstream.ok) {
+        res.status(502).send(`upstream error: ${upstream.status}`);
+        return;
+      }
+      const servers = listServers(text);
+      if (servers.length === 0) {
+        res.status(502).send('no proxy URIs found in subscription');
+        return;
+      }
+      res.setHeader('cache-control', 'no-store');
+      res.setHeader('content-type', 'text/html; charset=utf-8');
+      res.send(serversHtml(servers));
+      return;
+    }
+
     res.status(upstream.status);
     res.setHeader('cache-control', 'no-store');
     for (const name of PASS_HEADERS) {
